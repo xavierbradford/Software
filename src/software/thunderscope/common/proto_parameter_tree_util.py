@@ -1,9 +1,9 @@
-from pyqtgraph.Qt.QtWidgets import *
-from pyqtgraph import parametertree
-from thefuzz import fuzz
-from proto.import_all_protos import *
 import netifaces
+from pyqtgraph import parametertree
+from pyqtgraph.Qt.QtWidgets import *
+from thefuzz import fuzz
 
+from proto.import_all_protos import *
 
 """
 Instead of the using the generic parameter parsing, this constant can be used to define custom handlers for specific
@@ -50,6 +50,7 @@ def __create_int_parameter_writable(key, value, descriptor):
         "default": value,
         "limits": (int(minimum), int(maximum)),
         "step": 1,
+        "tip": options.Extensions[tooltip],
     }
 
 
@@ -84,6 +85,7 @@ def __create_double_parameter_writable(key, value, descriptor):
             maximum,
         ),
         "step": 0.01,
+        "tip": options.Extensions[tooltip],
     }
 
 
@@ -109,17 +111,23 @@ def __create_enum_parameter(key, value, descriptor):
         default=None,
         value=descriptor.enum_type.values[current_enum_index].name,
         limits=options,
+        tip=descriptor.GetOptions().Extensions[tooltip],  # TODO
     )
 
 
-def __create_bool_parameter(key, value, _):
+def __create_bool_parameter(key, value, descriptor):
     """Convert a bool field in proto to a BoolParameter
 
     :param key: The name of the parameter
     :param value: The default value
-    :param _: The proto descriptor, unused for bool
+    :param descriptor: The proto descriptor
     """
-    return {"name": key, "type": "bool", "value": value}
+    return {
+        "name": key,
+        "type": "bool",
+        "value": value,
+        "tip": descriptor.GetOptions().Extensions[tooltip],
+    }
 
 
 def __create_string_parameter_writable(key, value, descriptor):
@@ -129,7 +137,12 @@ def __create_string_parameter_writable(key, value, descriptor):
     :param value: The default value
     :param descriptor: The proto descriptor
     """
-    return {"name": key, "type": "text", "value": " "}
+    return {
+        "name": key,
+        "type": "text",
+        "value": " ",
+        "tip": descriptor.GetOptions().Extensions[tooltip],
+    }
 
 
 def __create_parameter_read_only(key, value, descriptor):
@@ -139,7 +152,13 @@ def __create_parameter_read_only(key, value, descriptor):
     :param value: The default value
     :param descriptor: The proto descriptor
     """
-    return {"name": key, "type": "str", "value": value, "readonly": True}
+    return {
+        "name": key,
+        "type": "str",
+        "value": value,
+        "readonly": True,
+        "tip": descriptor.GetOptions().Extensions[tooltip],
+    }
 
 
 def __create_network_enum(key, value, _):
@@ -152,7 +171,7 @@ def __create_network_enum(key, value, _):
 
     return parametertree.parameterTypes.ListParameter(
         name=key, default=None, value=value, limits=network_interfaces
-    )
+    )  # TODO add tooltip here as well
 
 
 def get_string_val(descriptor, value):

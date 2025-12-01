@@ -1,15 +1,16 @@
-import os
-from proto.import_all_protos import *
-from software.py_constants import MILLISECONDS_PER_SECOND
-from software.thunderscope.constants import ProtoConfigurationConstant
 import logging
+import os
+from typing import Any, Callable
+
+from PyQt6.QtWidgets import *
+from pyqtgraph import parametertree
 from pyqtgraph.Qt.QtCore import QTimer
 from pyqtgraph.Qt.QtWidgets import *
-from pyqtgraph import parametertree
+from software.py_constants import MILLISECONDS_PER_SECOND
+
 from proto.import_all_protos import *
 from software.thunderscope.common import proto_parameter_tree_util
-from typing import Any, Callable
-from PyQt6.QtWidgets import *
+from software.thunderscope.constants import ProtoConfigurationConstant
 
 
 class ProtoConfigurationWidget(QWidget):
@@ -68,6 +69,7 @@ class ProtoConfigurationWidget(QWidget):
         self.param_tree.setParameters(self.param_group, showTop=False)
         self.param_group.sigTreeStateChanged.connect(self.__handle_parameter_changed)
         self.param_tree.setAlternatingRowColors(False)
+        self.set_tooltips_from_parameter_options()
 
         self.save_hbox_top, self.save_hbox_bottom = self.create_widget()
 
@@ -220,6 +222,7 @@ class ProtoConfigurationWidget(QWidget):
         self.param_tree.setParameters(self.param_group, showTop=False)
         self.param_group.sigTreeStateChanged.connect(self.__handle_parameter_changed)
         self.param_tree.setAlternatingRowColors(False)
+        self.set_tooltips_from_parameter_options()
 
     def reset_button_callback(self) -> None:
         """Resetting the protobufs when the reset button has been clicked"""
@@ -252,6 +255,7 @@ class ProtoConfigurationWidget(QWidget):
         )
         self.param_tree.setParameters(self.param_group, showTop=False)
         self.param_group.sigTreeStateChanged.connect(self.__handle_parameter_changed)
+        self.set_tooltips_from_parameter_options()
 
     def __handle_parameter_changed(self, param, changes) -> None:
         """Handles the parameter change by triggering the provided callback
@@ -322,3 +326,16 @@ class ProtoConfigurationWidget(QWidget):
                     exec(f"{current_attr}.{key} = {value}")
             else:
                 self.build_proto(value, f"{current_attr}.{key}")
+
+    def set_tooltips_from_parameter_options(self) -> None:
+        """Applies the tooltip option for each parameter in `self.param_tree`."""
+        for item in self.param_tree.listAllItems():
+            try:
+                # there are some QTreeWidgets in self.param_tree.listAllItems(), so param might not exist
+                # even if it does, tooltips aren't mandatory, so getting "tip" might fail.
+                # in either case, we can safely ignore this item and move to the next :)
+                tooltip = item.param.opts["tip"]
+                for column in range(item.columnCount()):
+                    item.setToolTip(column, tooltip)
+            except (KeyError, AttributeError):
+                pass
